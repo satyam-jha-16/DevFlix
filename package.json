@@ -1,0 +1,61 @@
+{
+  "name": "my-vscode-extension",
+  "displayName": "My VS Code Extension",
+  "description": "A simple VS Code extension",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.helloWorld",
+    "onCommand:extension.openYouTubeViewer"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "extension.openYouTubeViewer",
+        "title": "Open YouTube Viewer"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "youtubeViewer",
+          "title": "YouTube Viewer",
+          "icon": "media/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "youtubeViewer": [
+        {
+          "id": "youtubeViewerView",
+          "name": "YouTube Viewer"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "bun run compile",
+    "compile": "bun run tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.93.0",
+    "typescript": "^4.0.0",
+    "vscode": "^1.1.37"
+  },
+  "dependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/node": "^22.5.4",
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5"
+  }
+}
