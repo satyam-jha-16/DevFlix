@@ -10,19 +10,15 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.helloWorld",
-    "onCommand:extension.openYouTubeViewer"
+    "onCommand:extension.openDevflix"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
+   
       {
-        "command": "extension.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "extension.openYouTubeViewer",
-        "title": "Open YouTube Viewer"
+        "command": "extension.openDevflix",
+        "title": "Open Devflix"
       }
     ],
     "viewsContainers": {
@@ -45,11 +41,11 @@
   },
   "scripts": {
     "vscode:prepublish": "bun run compile",
-    "compile": "bun run tsc -p ./"
+    "compile": "bun x tsc -p ./"
   },
   "devDependencies": {
     "@types/vscode": "^1.93.0",
-    "typescript": "^4.0.0",
+    "typescript": "^5.5.4",
     "vscode": "^1.1.37"
   },
   "dependencies": {

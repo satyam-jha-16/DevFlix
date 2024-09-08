@@ -1,72 +1,90 @@
-import * as vscode from 'vscode';
-import axios from 'axios';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.activate = activate;
+exports.deactivate = deactivate;
+const vscode = __importStar(require("vscode"));
+const axios_1 = __importDefault(require("axios"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY; // Ensure this is loaded from environment variables
-
-export function activate(context: vscode.ExtensionContext) {
+function activate(context) {
     console.log('Congratulations, your extension "my-vscode-extension" is now active!');
-
-    let openYouTubeViewerDisposable = vscode.commands.registerCommand('extension.openYouTubeViewer', async () => {
-        const panel = vscode.window.createWebviewPanel(
-            'youtubeViewer',
-            'YouTube Viewer',
-            vscode.ViewColumn.Beside,
-            { enableScripts: true }
-        );
-
-        panel.webview.html = await getWebviewContent();
-
-        panel.webview.onDidReceiveMessage(
-            async message => {
-                switch (message.command) {
-                    case 'setLink':
-                        panel.webview.html = await getWebviewContent(message.link);
-                        break;
-                }
-            },
-            undefined,
-            context.subscriptions
-        );
-
+    let openYouTubeViewerDisposable = vscode.commands.registerCommand('extension.openYouTubeViewer', () => __awaiter(this, void 0, void 0, function* () {
+        const panel = vscode.window.createWebviewPanel('youtubeViewer', 'YouTube Viewer', vscode.ViewColumn.Beside, { enableScripts: true });
+        panel.webview.html = yield getWebviewContent();
+        panel.webview.onDidReceiveMessage((message) => __awaiter(this, void 0, void 0, function* () {
+            switch (message.command) {
+                case 'setLink':
+                    panel.webview.html = yield getWebviewContent(message.link);
+                    break;
+            }
+        }), undefined, context.subscriptions);
         vscode.window.showInputBox({ prompt: 'Enter YouTube Video or Playlist Link' }).then(link => {
             if (link) {
                 panel.webview.postMessage({ command: 'setLink', link: link });
             }
         });
-    });
-
+    }));
     context.subscriptions.push(openYouTubeViewerDisposable);
 }
-
-export function deactivate() { }
-
-async function getWebviewContent(link: string = ''): Promise<string> {
-    let iframeSrc = '';
-    let playlistContent = '';
-    let playlistItems = [];
-
-    if (link) {
-        const url = new URL(link);
-        const videoId = url.searchParams.get('v');
-        const playlistId = url.searchParams.get('list');
-
-        if (playlistId) {
-            playlistItems = await fetchPlaylistItems(playlistId);
-            playlistContent = playlistItems.map((item, index) => `
+function deactivate() { }
+function getWebviewContent() {
+    return __awaiter(this, arguments, void 0, function* (link = '') {
+        let iframeSrc = '';
+        let playlistContent = '';
+        let playlistItems = [];
+        if (link) {
+            const url = new URL(link);
+            const videoId = url.searchParams.get('v');
+            const playlistId = url.searchParams.get('list');
+            if (playlistId) {
+                playlistItems = yield fetchPlaylistItems(playlistId);
+                playlistContent = playlistItems.map((item, index) => `
                 <li onclick="playVideo(${index})" style="cursor: pointer;">
                     ${item.snippet.title}
                 </li>
             `).join('');
+            }
+            if (videoId) {
+                iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            }
         }
-        if (videoId) {
-            iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-        }
-    }
-
-    return `
+        return `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -105,29 +123,27 @@ async function getWebviewContent(link: string = ''): Promise<string> {
         </body>
         </html>
     `;
-}
-
-async function fetchPlaylistItems(playlistId: string): Promise<any[]> {
-    const response = await axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
-        params: {
-            part: 'snippet',
-            maxResults: 50,
-            playlistId: playlistId,
-            key: YOUTUBE_API_KEY
-        }
     });
-    return response.data.items;
 }
-
+function fetchPlaylistItems(playlistId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield axios_1.default.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
+            params: {
+                part: 'snippet',
+                maxResults: 50,
+                playlistId: playlistId,
+                key: YOUTUBE_API_KEY
+            }
+        });
+        return response.data.items;
+    });
+}
 // import * as vscode from 'vscode';
-
 // export function activate(context: vscode.ExtensionContext) {
 //     console.log('Congratulations, your extension "my-vscode-extension" is now active!');
-
 //     let helloWorldDisposable = vscode.commands.registerCommand('extension.helloWorld', () => {
 //         vscode.window.showInformationMessage('Hello World from my-vscode-extension!');
 //     });
-
 //     let openYouTubeViewerDisposable = vscode.commands.registerCommand('extension.openYouTubeViewer', () => {
 //         const panel = vscode.window.createWebviewPanel(
 //             'Devflix',
@@ -137,9 +153,7 @@ async function fetchPlaylistItems(playlistId: string): Promise<any[]> {
 //                 enableScripts: true
 //             }
 //         );
-
 //         panel.webview.html = getWebviewContent();
-
 //         panel.webview.onDidReceiveMessage(
 //             message => {
 //                 switch (message.command) {
@@ -152,24 +166,19 @@ async function fetchPlaylistItems(playlistId: string): Promise<any[]> {
 //             undefined,
 //             context.subscriptions
 //         );
-
 //         vscode.window.showInputBox({ prompt: 'Enter YouTube Video Link' }).then(link => {
 //             if (link) {
 //                 panel.webview.postMessage({ command: 'setLink', link: link });
 //             }
 //         });
 //     });
-
 //     context.subscriptions.push(helloWorldDisposable);
 //     context.subscriptions.push(openYouTubeViewerDisposable);
 // }
-
 // export function deactivate() { }
-
 // function getWebviewContent(link: string = ''): string {
 //     const videoId = link ? new URL(link).searchParams.get('v') : '';
 //     const iframeSrc = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
-
 //     return `
 //         <!DOCTYPE html>
 //         <html lang="en">
@@ -231,3 +240,4 @@ async function fetchPlaylistItems(playlistId: string): Promise<any[]> {
 //         </html>
 //     `;
 // }
+//# sourceMappingURL=temp.js.map
