@@ -39,9 +39,12 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY; // Ensure this is loaded from environment variables
+const dotenv = __importStar(require("dotenv"));
+const path = __importStar(require("path"));
+// Load .env file
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+console.log('YouTube API Key:', YOUTUBE_API_KEY);
 function activate(context) {
     console.log('Congratulations, your extension "devflix" is now active!');
     let openDevflixDisposable = vscode.commands.registerCommand('extension.openDevflix', () => __awaiter(this, void 0, void 0, function* () {
@@ -89,6 +92,7 @@ function getWebviewContent() {
             const playlistId = url.searchParams.get('list');
             if (playlistId) {
                 playlistItems = yield fetchPlaylistItems(playlistId);
+                console.log('Fetched playlist items:', playlistItems);
                 playlistContent = playlistItems.map((item, index) => `
                 <li onclick="playVideo(${index})" style="cursor: pointer;">
                     ${item.snippet.title}
@@ -228,6 +232,7 @@ function getWebviewContent() {
             <div class="content-container">
                 ${mainContent}
             </div>
+            <div id="debug"></div>
             <script>
                 const vscode = acquireVsCodeApi();
                 const playlistItems = ${JSON.stringify(playlistItems)};
@@ -243,6 +248,7 @@ function getWebviewContent() {
                     const playlistId = new URLSearchParams(mainVideo.src.split('?')[1]).get('list');
                     mainVideo.src = \`https://www.youtube.com/embed/\${videoId}?autoplay=1\${playlistId ? \`&list=\${playlistId}\` : ''}\`;
                 }
+                document.getElementById('debug').textContent = JSON.stringify(playlistItems);
             </script>
         </body>
         </html>
@@ -251,15 +257,23 @@ function getWebviewContent() {
 }
 function fetchPlaylistItems(playlistId) {
     return __awaiter(this, void 0, void 0, function* () {
-        const response = yield axios_1.default.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
-            params: {
-                part: 'snippet',
-                maxResults: 50,
-                playlistId: playlistId,
-                key: YOUTUBE_API_KEY
-            }
-        });
-        return response.data.items;
+        const apiKey = process.env.YOUTUBE_API_KEY;
+        console.log('API Key in fetchPlaylistItems:', apiKey);
+        try {
+            const response = yield axios_1.default.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
+                params: {
+                    part: 'snippet',
+                    maxResults: 50,
+                    playlistId: playlistId,
+                    key: apiKey
+                }
+            });
+            return response.data.items;
+        }
+        catch (error) {
+            console.error('Error fetching playlist items:', error);
+            return [];
+        }
     });
 }
 //# sourceMappingURL=extension.js.map

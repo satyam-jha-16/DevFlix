@@ -1,10 +1,13 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-dotenv.config();
+// Load .env file
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY; // Ensure this is loaded from environment variables
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "devflix" is now active!');
@@ -71,6 +74,7 @@ async function getWebviewContent(link: string = ''): Promise<string> {
 
         if (playlistId) {
             playlistItems = await fetchPlaylistItems(playlistId);
+            console.log('Fetched playlist items:', playlistItems);
             playlistContent = playlistItems.map((item, index) => `
                 <li onclick="playVideo(${index})" style="cursor: pointer;">
                     ${item.snippet.title}
@@ -213,6 +217,7 @@ async function getWebviewContent(link: string = ''): Promise<string> {
             <div class="content-container">
                 ${mainContent}
             </div>
+            <div id="debug"></div>
             <script>
                 const vscode = acquireVsCodeApi();
                 const playlistItems = ${JSON.stringify(playlistItems)};
@@ -228,6 +233,7 @@ async function getWebviewContent(link: string = ''): Promise<string> {
                     const playlistId = new URLSearchParams(mainVideo.src.split('?')[1]).get('list');
                     mainVideo.src = \`https://www.youtube.com/embed/\${videoId}?autoplay=1\${playlistId ? \`&list=\${playlistId}\` : ''}\`;
                 }
+                document.getElementById('debug').textContent = JSON.stringify(playlistItems);
             </script>
         </body>
         </html>
@@ -235,13 +241,20 @@ async function getWebviewContent(link: string = ''): Promise<string> {
 }
 
 async function fetchPlaylistItems(playlistId: string): Promise<any[]> {
-    const response = await axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
-        params: {
-            part: 'snippet',
-            maxResults: 50,
-            playlistId: playlistId,
-            key: YOUTUBE_API_KEY
-        }
-    });
-    return response.data.items;
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    console.log('API Key in fetchPlaylistItems:', apiKey);
+    try {
+        const response = await axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
+            params: {
+                part: 'snippet',
+                maxResults: 50,
+                playlistId: playlistId,
+                key: apiKey
+            }
+        });
+        return response.data.items;
+    } catch (error) {
+        console.error('Error fetching playlist items:', error);
+        return [];
+    }
 }
